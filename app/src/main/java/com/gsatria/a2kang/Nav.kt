@@ -12,6 +12,7 @@ import com.gsatria.a2kang.datasource.repository.AuthRepository
 import com.gsatria.a2kang.screen.auth.LoginScreen
 import com.gsatria.a2kang.screen.auth.SelectRoleScreen
 import com.gsatria.a2kang.model.request.RegisterUserRequest
+import com.gsatria.a2kang.screen.auth.UploadVerifikasiTukangScreen
 import com.gsatria.a2kang.screen.welcome.WelcomeScreen
 import com.gsatria.a2kang.viewmodel.auth.AuthViewModel
 import com.gsatria.a2kang.viewmodel.auth.AuthViewModelFactory
@@ -79,6 +80,17 @@ fun MyApp() {
                 }
             )
 
+        }
+
+        composable("upload_verifikasi_tukang"){
+            UploadVerifikasiTukangScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveAndContinue = {
+                    navController.navigate("login") {
+                        popUpTo("upload_verifikasi_tukang") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
