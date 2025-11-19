@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.gsatria.a2kang.datasource.repository.AuthRepository
 import com.gsatria.a2kang.model.request.LoginRequest
 import com.gsatria.a2kang.model.request.RegisterRequest
-import com.gsatria.a2kang.viewmodel.auth.AuthUiState
+import com.gsatria.a2kang.core.util.JwtUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -20,6 +20,9 @@ class AuthViewModel(
     private val _token = MutableStateFlow<String?>(null)
     val token: StateFlow<String?> = _token
 
+    private val _userRole = MutableStateFlow<String?>(null)
+    val userRole: StateFlow<String?> = _userRole
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(loading = true)
@@ -29,6 +32,13 @@ class AuthViewModel(
             if (result.isSuccess) {
                 val tokenValue = result.getOrNull()
                 _token.value = tokenValue
+                
+                // Extract role dari JWT token
+                tokenValue?.let { token ->
+                    val role = JwtUtils.getRoleFromToken(token)
+                    _userRole.value = role
+                }
+                
                 _uiState.value = AuthUiState(successMessage = "Login berhasil!")
             } else {
                 _uiState.value = AuthUiState(

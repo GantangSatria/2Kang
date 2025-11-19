@@ -95,6 +95,7 @@ fun HomepageTukang(
         modifier = modifier
             .fillMaxSize()
             .background(Color.White)
+            .padding(WindowInsets.statusBars.asPaddingValues())
     ) {
         item {
             // Header Section

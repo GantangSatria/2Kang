@@ -39,7 +39,8 @@ enum class AuthTab { Masuk, Daftar }
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
-    onNavigateToSelectRole: (RegisterUserRequest) -> Unit = {}
+    onNavigateToSelectRole: (RegisterUserRequest) -> Unit = {},
+    onLoginSuccess: (String?) -> Unit = {} // Callback dengan role
 ) {
     var selectedTab by remember { mutableStateOf(AuthTab.Masuk) }
 
@@ -62,6 +63,9 @@ fun LoginScreen(
         uiState.successMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.resetState()
+            // Panggil callback dengan role setelah login berhasil
+            val role = viewModel.userRole.value
+            onLoginSuccess(role)
         }
     }
 
