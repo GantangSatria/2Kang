@@ -1,9 +1,13 @@
 package com.gsatria.a2kang.di
+import com.gsatria.a2kang.datasource.ApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
 
 
 @Module
@@ -23,8 +27,8 @@ object AppModule {
     fun provideApi(retrofit: Retrofit): ApiService =
         retrofit.create(ApiService::class.java)
 
-    @Provides
-    @Singleton
-    fun provideRepository(api: ApiService): MainRepository =
-        MainRepository(api)
+//    @Provides
+//    @Singleton
+//    fun provideRepository(api: ApiService): MainRepository =
+//        MainRepository(api)
 }
