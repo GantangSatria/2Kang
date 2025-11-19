@@ -9,9 +9,11 @@ import com.gsatria.a2kang.core.util.JwtUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.gsatria.a2kang.core.util.TokenManager
 
 class AuthViewModel(
-    private val repo: AuthRepository
+    private val repo: AuthRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -33,8 +35,11 @@ class AuthViewModel(
                 val tokenValue = result.getOrNull()
                 _token.value = tokenValue
                 
-                // Extract role dari JWT token
                 tokenValue?.let { token ->
+                    // Save token
+                    tokenManager.saveToken(token)
+                    
+                    // Extract role dari JWT token
                     val role = JwtUtils.getRoleFromToken(token)
                     _userRole.value = role
                 }
