@@ -36,7 +36,9 @@ fun SelectRoleScreen(
     onBackClick: () -> Unit = {},
     registerUserRequest: RegisterUserRequest? = null,
     viewModel: AuthViewModel,
-    onRegistered: () -> Unit = {}
+    onRegistered: () -> Unit = {},
+    onRegisteredUser: () -> Unit,
+    onRegisteredTukang: () -> Unit
 ) {
     var selectedRole by remember { mutableStateOf<UserRole?>(null) }
     val blueColor = Color(0xFF2D8CFF)
@@ -106,8 +108,22 @@ fun SelectRoleScreen(
                     val req = registerUserRequest
                     if (req != null && selectedRole != null) {
                         when (selectedRole) {
-                            UserRole.PENGGUNA -> viewModel.registerUser(req.full_name, req.email, req.password)
-                            UserRole.TUKANG -> viewModel.registerTukang(req.full_name, req.email, req.password)
+                            UserRole.PENGGUNA -> {
+                                viewModel.registerUser(
+                                    req.full_name,
+                                    req.email,
+                                    req.password
+                                )
+                                onRegisteredUser()
+                            }
+                            UserRole.TUKANG -> {
+                                viewModel.registerTukang(
+                                    req.full_name,
+                                    req.email,
+                                    req.password
+                                )
+                                onRegisteredTukang()
+                            }
                             else -> {}
                         }
                     }

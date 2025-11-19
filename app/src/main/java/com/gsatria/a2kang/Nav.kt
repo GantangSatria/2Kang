@@ -67,10 +67,18 @@ fun MyApp() {
                 onBackClick = { navController.popBackStack() },
                 registerUserRequest = registerUserRequest,
                 viewModel = viewModel,
-                onRegistered = { // after success navigate to welcome or login
-                    navController.popBackStack("login", inclusive = false)
+                onRegisteredUser = {  // PENGGUNA
+                    navController.navigate("login") {
+                        popUpTo("select_role") { inclusive = true }
+                    }
+                },
+                onRegisteredTukang = {  // TUKANG
+                    navController.navigate("upload_verifikasi_tukang") {
+                        popUpTo("select_role") { inclusive = true }
+                    }
                 }
             )
+
         }
     }
 }
