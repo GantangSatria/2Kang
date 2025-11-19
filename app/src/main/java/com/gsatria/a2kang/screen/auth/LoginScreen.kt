@@ -34,7 +34,11 @@ val sora = FontFamily(
 enum class AuthTab { Masuk, Daftar }
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    viewModel: AuthViewModel,
+    onNavigateToSelectRole: (RegisterUserRequest) -> Unit = {},
+    onLoginSuccess: (String?) -> Unit = {} // Callback dengan role
+) {
     var selectedTab by remember { mutableStateOf(AuthTab.Masuk) }
 
     var loginEmail by remember { mutableStateOf("") }
@@ -45,6 +49,34 @@ fun LoginScreen() {
     var registerPassword by remember { mutableStateOf("") }
     var registerConfirmPassword by remember { mutableStateOf("") }
 
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState) {
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.resetState()
+        }
+        uiState.successMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.resetState()
+            // Panggil callback dengan role setelah login berhasil
+            val role = viewModel.userRole.value
+            onLoginSuccess(role)
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
+    }
+
+    if (uiState.loading) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Loading...") },
+            confirmButton = {}
+        )
+    }
 
     Column(
         modifier = Modifier
