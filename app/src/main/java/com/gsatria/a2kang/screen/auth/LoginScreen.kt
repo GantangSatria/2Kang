@@ -25,6 +25,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import com.gsatria.a2kang.model.request.RegisterUserRequest
+import com.gsatria.a2kang.viewmodel.auth.AuthViewModel
+
 
 val sora = FontFamily(
     Font(R.font.sora_regular, FontWeight.Normal),
@@ -34,7 +37,10 @@ val sora = FontFamily(
 enum class AuthTab { Masuk, Daftar }
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    viewModel: AuthViewModel,
+    onNavigateToSelectRole: (RegisterUserRequest) -> Unit = {}
+) {
     var selectedTab by remember { mutableStateOf(AuthTab.Masuk) }
 
     var loginEmail by remember { mutableStateOf("") }
@@ -45,6 +51,31 @@ fun LoginScreen() {
     var registerPassword by remember { mutableStateOf("") }
     var registerConfirmPassword by remember { mutableStateOf("") }
 
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState) {
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.resetState()
+        }
+        uiState.successMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.resetState()
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
+    }
+
+    if (uiState.loading) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Loading...") },
+            confirmButton = {}
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -86,7 +117,18 @@ fun LoginScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        PrimaryActionButton(sora, selectedTab)
+        PrimaryActionButton(
+            sora = sora,
+            selectedTab = selectedTab,
+            loginEmail = loginEmail,
+            loginPassword = loginPassword,
+            registerUsername = registerUsername,
+            registerEmail = registerEmail,
+            registerPassword = registerPassword,
+            registerConfirmPassword = registerConfirmPassword,
+            viewModel = viewModel,
+            onNavigateToSelectRole = onNavigateToSelectRole
+        )
 
         Spacer(modifier = Modifier.height(64.dp)) // Padding akhir ditingkatkan sedikit
     }
@@ -309,11 +351,40 @@ fun TabItem(
 }
 
 @Composable
-fun PrimaryActionButton(sora: FontFamily, selectedTab: AuthTab) {
+fun PrimaryActionButton(
+    sora: FontFamily,
+    selectedTab: AuthTab,
+    loginEmail: String,
+    loginPassword: String,
+    registerUsername: String,
+    registerEmail: String,
+    registerPassword: String,
+    registerConfirmPassword: String,
+    viewModel: AuthViewModel,
+    onNavigateToSelectRole: (RegisterUserRequest) -> Unit = {}
+) {
     Button(
         onClick = {
-            val action = if (selectedTab == AuthTab.Masuk) "Masuk" else "Daftar"
-            println("$action clicked!")
+            if (selectedTab == AuthTab.Masuk) {
+                // Login — sesuai signature viewModel.login(email, password)
+                viewModel.login(loginEmail, loginPassword)
+
+            } else {
+                // Register — pastikan password cocok dulu
+                if (registerPassword != registerConfirmPassword) {
+                    // pakai snackbar / toast lebih baik, sekarang debug:
+                    println("Password tidak cocok")
+                    return@Button
+                }
+
+                // Instead of registering immediately, pass the filled form to SelectRole
+                val registerReq = RegisterUserRequest(
+                    full_name = registerUsername,
+                    email = registerEmail,
+                    password = registerPassword
+                )
+                onNavigateToSelectRole(registerReq)
+            }
         },
         modifier = Modifier
             .width(304.dp)
@@ -335,8 +406,9 @@ fun PrimaryActionButton(sora: FontFamily, selectedTab: AuthTab) {
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 private fun PreviewLoginScreen() {
-    LoginScreen()
+    //LoginScreen()
 }

@@ -11,14 +11,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             _2KangTheme {
-                WelcomeScreen(
-                    onStartClick = {
-                        // nanti pindah ke screen lain
-                        // contoh: navigate to Login
-                    }
-                )
+                MyApp()
             }
         }
     }

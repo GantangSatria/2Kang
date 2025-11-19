@@ -3,11 +3,9 @@ package com.gsatria.a2kang.viewmodel.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gsatria.a2kang.datasource.repository.AuthRepository
-import com.gsatria.a2kang.model.domain.User
 import com.gsatria.a2kang.model.request.LoginRequest
-import com.gsatria.a2kang.model.request.RegisterUserRequest
-import com.gsatria.a2kang.model.request.RegisterTukangRequest
-import kotlinx.coroutines.delay
+import com.gsatria.a2kang.model.request.RegisterRequest
+import com.gsatria.a2kang.viewmodel.auth.AuthUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -19,12 +17,9 @@ class AuthViewModel(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
-    private val _loggedUser = MutableStateFlow<String?>(null) // Simpan token
-    val loggedUser: StateFlow<String?> = _loggedUser
+    private val _token = MutableStateFlow<String?>(null)
+    val token: StateFlow<String?> = _token
 
-    // =============================================
-    // LOGIN
-    // =============================================
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(loading = true)
@@ -32,8 +27,8 @@ class AuthViewModel(
             val result = repo.login(LoginRequest(email, password))
 
             if (result.isSuccess) {
-                val token = result.getOrNull()
-                _loggedUser.value = token
+                val tokenValue = result.getOrNull()
+                _token.value = tokenValue
                 _uiState.value = AuthUiState(successMessage = "Login berhasil!")
             } else {
                 _uiState.value = AuthUiState(
@@ -43,14 +38,21 @@ class AuthViewModel(
         }
     }
 
-    // =============================================
+    // ============================
     // REGISTER USER
-    // =============================================
-    fun registerUser(request: RegisterUserRequest) {
+    // ============================
+    fun registerUser(fullName: String, email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(loading = true)
 
-            val result = repo.registerUser(request)
+            val req = RegisterRequest(
+                fullName = fullName,
+                email = email,
+                password = password,
+                role = "user"
+            )
+
+            val result = repo.registerUser(req)
 
             if (result.isSuccess) {
                 _uiState.value = AuthUiState(successMessage = "Registrasi user berhasil!")
@@ -62,14 +64,21 @@ class AuthViewModel(
         }
     }
 
-    // =============================================
+    // ============================
     // REGISTER TUKANG
-    // =============================================
-    fun registerTukang(request: RegisterTukangRequest) {
+    // ============================
+    fun registerTukang(fullName: String, email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(loading = true)
 
-            val result = repo.registerTukang(request)
+            val req = RegisterRequest(
+                fullName = fullName,
+                email = email,
+                password = password,
+                role = "tukang"
+            )
+
+            val result = repo.registerTukang(req)
 
             if (result.isSuccess) {
                 _uiState.value = AuthUiState(successMessage = "Registrasi tukang berhasil!")
@@ -81,9 +90,10 @@ class AuthViewModel(
         }
     }
 
+    // ============================
+    // RESET
+    // ============================
     fun resetState() {
         _uiState.value = AuthUiState()
     }
 }
-
-
