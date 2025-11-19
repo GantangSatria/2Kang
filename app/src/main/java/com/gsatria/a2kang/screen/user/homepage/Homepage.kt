@@ -1,14 +1,10 @@
 package com.gsatria.a2kang.screen.user.homepage
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -23,16 +19,19 @@ import com.gsatria.a2kang.screen.user.homepage.component.TukangCard
 import com.gsatria.a2kang.viewmodel.HomeViewModel
 
 @Composable
-fun Homepage(
+fun HomepageUser(
     viewModel: HomeViewModel = viewModel(),
     onTukangClick: (Int) -> Unit = {}
 ) {
     val tukangs = viewModel.tukangs.collectAsState()
+    val loading = viewModel.loading.collectAsState()
+    val error = viewModel.error.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
+            .padding(WindowInsets.statusBars.asPaddingValues())
     ) {
         // Header
         Box(
@@ -57,28 +56,73 @@ fun Homepage(
             }
         }
 
-        // List of Tukangs with LazyColumn
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
+        // Error Message
+        error.value?.let { errorMessage ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    text = "Rekomendasi Tukang",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    text = errorMessage,
+                    color = Color.Red,
+                    fontSize = 14.sp
                 )
             }
+        }
 
-            items(tukangs.value) { tukang ->
-                TukangCard(
-                    tukang = tukang,
-                    onItemClick = { onTukangClick(it.id) }
-                )
+        // Loading Indicator
+        if (loading.value) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            // List of Tukangs with LazyColumn
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Text(
+                        text = "Rekomendasi Tukang",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                if (tukangs.value.isEmpty() && !loading.value) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Tidak ada tukang tersedia",
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                } else {
+                    items(tukangs.value) { tukang ->
+                        TukangCard(
+                            tukang = tukang,
+                            onItemClick = { onTukangClick(it.id) }
+                        )
+                    }
+                }
             }
         }
     }

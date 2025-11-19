@@ -10,6 +10,6 @@ import com.gsatria.a2kang.ui.theme.Typography
 @Composable
 fun HomepagePreview() {
     Surface {
-        Homepage()
+        HomepageUser()
     }
 }
