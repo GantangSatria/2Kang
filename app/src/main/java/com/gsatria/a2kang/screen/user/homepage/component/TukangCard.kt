@@ -45,7 +45,8 @@ fun TukangCard(
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
-            // Image placeholder
+
+            // Foto placeholder
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -73,31 +74,38 @@ fun TukangCard(
             Text(
                 text = tukang.name,
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 color = Color.Black,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            // Badges
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-//                items(tukang.category) { item ->
-//                    BadgeItem(text = item)
-//                }
+            // Category badge (1 value only)
+            if (tukang.category.isNotEmpty()) {
+                BadgeItem(
+                    text = tukang.category,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
 
-            // Price
-            Text(
-                text = "Rp${String.format("%,d", tukang.price).replace(',', '.')}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = Color.Black,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            // Services
+            if (tukang.services.isNotEmpty()) {
+                Text(
+                    text = tukang.services,
+                    fontSize = 14.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+
+            // Bio
+            if (tukang.bio.isNotEmpty()) {
+                Text(
+                    text = tukang.bio,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
     }
 }
@@ -121,3 +129,4 @@ fun BadgeItem(
         )
     }
 }
+
