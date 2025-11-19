@@ -319,7 +319,7 @@ fun PrimaryActionButton(sora: FontFamily, selectedTab: AuthTab) {
             .width(304.dp)
             .height(56.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF1E80FF)
+            containerColor = Color(0xFF2D8CFF)
         ),
         shape = RoundedCornerShape(10.dp)
     ) {
