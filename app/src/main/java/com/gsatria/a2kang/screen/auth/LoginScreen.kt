@@ -25,9 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import com.gsatria.a2kang.model.request.RegisterUserRequest
-import com.gsatria.a2kang.viewmodel.auth.AuthViewModel
-
 
 val sora = FontFamily(
     Font(R.font.sora_regular, FontWeight.Normal),
@@ -121,18 +118,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        PrimaryActionButton(
-            sora = sora,
-            selectedTab = selectedTab,
-            loginEmail = loginEmail,
-            loginPassword = loginPassword,
-            registerUsername = registerUsername,
-            registerEmail = registerEmail,
-            registerPassword = registerPassword,
-            registerConfirmPassword = registerConfirmPassword,
-            viewModel = viewModel,
-            onNavigateToSelectRole = onNavigateToSelectRole
-        )
+        PrimaryActionButton(sora, selectedTab)
 
         Spacer(modifier = Modifier.height(64.dp)) // Padding akhir ditingkatkan sedikit
     }
@@ -355,40 +341,11 @@ fun TabItem(
 }
 
 @Composable
-fun PrimaryActionButton(
-    sora: FontFamily,
-    selectedTab: AuthTab,
-    loginEmail: String,
-    loginPassword: String,
-    registerUsername: String,
-    registerEmail: String,
-    registerPassword: String,
-    registerConfirmPassword: String,
-    viewModel: AuthViewModel,
-    onNavigateToSelectRole: (RegisterUserRequest) -> Unit = {}
-) {
+fun PrimaryActionButton(sora: FontFamily, selectedTab: AuthTab) {
     Button(
         onClick = {
-            if (selectedTab == AuthTab.Masuk) {
-                // Login — sesuai signature viewModel.login(email, password)
-                viewModel.login(loginEmail, loginPassword)
-
-            } else {
-                // Register — pastikan password cocok dulu
-                if (registerPassword != registerConfirmPassword) {
-                    // pakai snackbar / toast lebih baik, sekarang debug:
-                    println("Password tidak cocok")
-                    return@Button
-                }
-
-                // Instead of registering immediately, pass the filled form to SelectRole
-                val registerReq = RegisterUserRequest(
-                    full_name = registerUsername,
-                    email = registerEmail,
-                    password = registerPassword
-                )
-                onNavigateToSelectRole(registerReq)
-            }
+            val action = if (selectedTab == AuthTab.Masuk) "Masuk" else "Daftar"
+            println("$action clicked!")
         },
         modifier = Modifier
             .width(304.dp)
@@ -410,9 +367,8 @@ fun PrimaryActionButton(
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 private fun PreviewLoginScreen() {
-    //LoginScreen()
+    LoginScreen()
 }

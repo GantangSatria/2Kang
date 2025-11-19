@@ -13,7 +13,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             _2KangTheme {
-                MyApp()
+                WelcomeScreen(
+                    onStartClick = {
+                        // nanti pindah ke screen lain
+                        // contoh: navigate to Login
+                    }
+                )
             }
         }
     }
