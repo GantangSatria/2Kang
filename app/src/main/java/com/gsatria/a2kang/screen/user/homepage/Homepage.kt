@@ -23,7 +23,7 @@ import com.gsatria.a2kang.screen.user.homepage.component.TukangCard
 import com.gsatria.a2kang.viewmodel.HomeViewModel
 
 @Composable
-fun Homepage(
+fun HomepageUser(
     viewModel: HomeViewModel = viewModel(),
     onTukangClick: (Int) -> Unit = {}
 ) {
