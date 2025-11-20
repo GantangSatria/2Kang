@@ -58,4 +58,7 @@ dependencies {
     // --- NETWORK ---
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+
+    // Add logging interceptor
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

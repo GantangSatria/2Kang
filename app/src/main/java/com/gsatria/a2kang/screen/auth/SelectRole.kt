@@ -23,15 +23,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gsatria.a2kang.R
 import com.gsatria.a2kang.ui.theme.SoraFontFamily
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.collectAsState
+import com.gsatria.a2kang.model.request.RegisterUserRequest
+import com.gsatria.a2kang.viewmodel.auth.AuthViewModel
 
 enum class UserRole { PENGGUNA, TUKANG }
 
 @Composable
 fun SelectRoleScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    registerUserRequest: com.gsatria.a2kang.model.request.RegisterUserRequest? = null,
+    viewModel: com.gsatria.a2kang.viewmodel.auth.AuthViewModel,
+    onRegistered: () -> Unit = {},
+    onRegisteredUser: () -> Unit,
+    onRegisteredTukang: () -> Unit
 ) {
     var selectedRole by remember { mutableStateOf<UserRole?>(null) }
     val blueColor = Color(0xFF2D8CFF)
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+
+    LaunchedEffect(uiState) {
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.resetState()
+        }
+        uiState.successMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.resetState()
+            onRegistered()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -79,9 +103,37 @@ fun SelectRoleScreen(
                 text = "Selanjutnya",
                 enabled = selectedRole != null,
                 blueColor = blueColor,
-                onClick = {},
+                onClick = {
+                    // perform registration using viewModel and the saved registerUserRequest
+                    val req = registerUserRequest
+                    if (req != null && selectedRole != null) {
+                        when (selectedRole) {
+                            UserRole.PENGGUNA -> {
+                                viewModel.registerUser(
+                                    req.full_name,
+                                    req.email,
+                                    req.password
+                                )
+                                onRegisteredUser()
+                            }
+                            UserRole.TUKANG -> {
+                                viewModel.registerTukang(
+                                    req.full_name,
+                                    req.email,
+                                    req.password
+                                )
+                                onRegisteredTukang()
+                            }
+                            else -> {}
+                        }
+                    }
+                },
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
+
+            Box(Modifier.fillMaxWidth()) {
+                androidx.compose.material3.SnackbarHost(snackbarHostState, Modifier.align(Alignment.Center))
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -243,5 +295,5 @@ fun PrimaryActionButton(text: String, enabled: Boolean, blueColor: Color, onClic
 @Preview(showBackground = true)
 @Composable
 private fun PreviewSelectRoleScreen() {
-    SelectRoleScreen()
+//    SelectRoleScreen()
 }

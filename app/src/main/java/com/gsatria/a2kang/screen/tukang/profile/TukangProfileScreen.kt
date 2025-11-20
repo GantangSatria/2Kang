@@ -30,6 +30,10 @@ import com.gsatria.a2kang.R
 import com.gsatria.a2kang.ui.theme.SoraFontFamily
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gsatria.a2kang.viewmodel.TukangHomeViewModel
 
 data class Ulasan(
     val nama: String,
@@ -39,9 +43,19 @@ data class Ulasan(
 
 @Composable
 fun TukangProfileScreen(
+    viewModel: TukangHomeViewModel = viewModel(),
+    onBackClick: () -> Unit = {},
     onEditLayananClick: () -> Unit = {},
     onEditProfilClick: () -> Unit = {}
 ) {
+    val profileData = viewModel.profileData.collectAsState()
+    val loading = viewModel.loading.collectAsState()
+    val error = viewModel.error.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
     val bluePrimary = Color(0xFF2D8CFF)
 
     val daftarUlasan = listOf(
@@ -355,4 +369,10 @@ fun SkillChipStatic(skill: String, isSelectedStyle: Boolean) {
             )
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun Profiletukangpreview() {
+    TukangProfileScreen()
 }

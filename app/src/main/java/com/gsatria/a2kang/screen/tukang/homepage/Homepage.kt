@@ -16,9 +16,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,7 +32,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gsatria.a2kang.model.response.TukangHomeResponse
+import com.gsatria.a2kang.model.response.TukangJobsSection
+import com.gsatria.a2kang.model.response.TransactionResponse
+import com.gsatria.a2kang.model.response.TukangResponse
 import com.gsatria.a2kang.ui.theme.SoraFontFamily
+import com.gsatria.a2kang.viewmodel.TukangHomeViewModel
 
 // Data Models - akan diisi dari backend
 data class TukangProfile(
@@ -59,111 +68,206 @@ data class HomepageTukangData(
 
 @Composable
 fun HomepageTukang(
-    data: HomepageTukangData? = null,
+    viewModel: TukangHomeViewModel = viewModel(),
     onEditProfileClick: () -> Unit = {},
     onJobClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    // Default data untuk preview/testing
-    val homepageData = data ?: HomepageTukangData(
-        profile = TukangProfile(
-            name = "Budi Santoso",
-            bio = "Saya tukang yang berpengalaman dan dapat diandalkan dengan...",
-            rate = 100000L
-        ),
-        statistics = JobStatistics(
-            unprocessedJobs = 6,
-            completedJobs = 30
-        ),
-        upcomingJobs = listOf(
-            UpcomingJob(
-                id = 1,
-                title = "Perbaikan AC",
-                date = "Senin, 17 November 2025",
-                time = "14.00"
+    val homeData = viewModel.homeData.collectAsState()
+    val loading = viewModel.loading.collectAsState()
+    val error = viewModel.error.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadHomeData()
+    }
+
+    // Convert response to UI data
+    val homepageData = homeData.value?.let { response ->
+
+        // 1. Ambil Profile (Wajib ada Nama & Bio)
+        val profile = response.profile
+        if (profile == null) {
+            return@let null
+        }
+
+        // 2. Ambil Jobs (Aman jika null)
+        val jobs = response.jobs ?: TukangJobsSection()
+
+        // Ambil list job, default ke list kosong jika null
+        val pendingJobs = jobs.pending ?: emptyList()
+        val confirmedJobs = jobs.confirmed ?: emptyList()
+        val doneJobs = jobs.done ?: emptyList()
+
+        val allUpcomingJobs = pendingJobs + confirmedJobs
+
+        // Mapping ke Data Class UI
+        HomepageTukangData(
+            profile = TukangProfile(
+                name = profile.name ?: "Tanpa Nama",
+                bio = profile.bio ?: "Belum ada bio",
+                // Rate di-hardcode 0 dulu karena di entity Go belum ada field harga/rate numeric
+                // atau bisa diambil dari profile.services jika formatnya string angka
+                rate = 0L
             ),
-            UpcomingJob(
-                id = 2,
-                title = "Perbaikan Saluran Air",
-                date = "Senin, 17 November 2025",
-                time = "16.00"
-            )
+            statistics = JobStatistics(
+                unprocessedJobs = pendingJobs.size,
+                completedJobs = doneJobs.size
+            ),
+            upcomingJobs = allUpcomingJobs.mapNotNull { transaction ->
+                // Mapping transaction hanya jika ID ada
+                transaction.id?.let { id ->
+                    UpcomingJob(
+                        id = id,
+                        title = transaction.title ?: "Pekerjaan Baru",
+                        date = transaction.date ?: "-",
+                        time = transaction.time ?: "-"
+                    )
+                }
+            }
         )
-    )
+    }
+    
+    // Debug logging
+    println("DEBUG: homepageData is null: ${homepageData == null}")
+    println("DEBUG: homeData.value is null: ${homeData.value == null}")
+    println("DEBUG: loading: ${loading.value}, error: ${error.value}")
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(WindowInsets.statusBars.asPaddingValues())
-    ) {
-        item {
-            // Header Section
-            HeaderSection(
-                name = homepageData.profile.name,
-                profileImageUrl = homepageData.profile.profileImageUrl
-            )
+    if (loading.value) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
-
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
+    } else if (homepageData == null) {
+        // Show error or empty state
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Data tidak tersedia",
+                    color = Color.Gray,
+                    fontSize = 16.sp
+                )
+                error.value?.let {
+                    Text(
+                        text = it,
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                // Add retry button
+                Button(
+                    onClick = { viewModel.loadHomeData() },
+                    modifier = Modifier.padding(top = 16.dp)
+                ) {
+                    Text("Coba Lagi")
+                }
+            }
         }
+    } else {
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(WindowInsets.statusBars.asPaddingValues())
+        ) {
+            item {
+                // Error Message
+                error.value?.let { errorMessage ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = errorMessage,
+                            color = Color.Red,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
 
-        item {
-            // Profile Card
-            ProfileCard(
-                profile = homepageData.profile,
-                onEditClick = onEditProfileClick,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
+            item {
+                // Header Section
+                HeaderSection(
+                    name = homepageData.profile.name,
+                    profileImageUrl = homepageData.profile.profileImageUrl
+                )
+            }
 
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-        }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-        item {
-            // Statistics Cards
-            StatisticsCards(
-                statistics = homepageData.statistics,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
+            item {
+                // Profile Card
+                ProfileCard(
+                    profile = homepageData.profile,
+                    onEditClick = onEditProfileClick,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
 
-        item {
-            Spacer(modifier = Modifier.height(32.dp))
-        }
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-        item {
-            // Upcoming Jobs Section Header
-            Text(
-                text = "Pekerjaan Mendatang",
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    fontFamily = SoraFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                ),
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
+            item {
+                // Statistics Cards
+                StatisticsCards(
+                    statistics = homepageData.statistics,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
 
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+            item {
+                Spacer(modifier = Modifier.height(32.dp))
+            }
 
-        // Upcoming Jobs List
-        items(homepageData.upcomingJobs) { job ->
-            UpcomingJobCard(
-                job = job,
-                onClick = { onJobClick(job.id) },
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
+            item {
+                // Upcoming Jobs Section Header
+                Text(
+                    text = "Pekerjaan Mendatang",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontFamily = SoraFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    ),
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
 
-        item {
-            Spacer(modifier = Modifier.height(32.dp))
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Upcoming Jobs List
+            homepageData.upcomingJobs.forEach { job ->
+                item {
+                    UpcomingJobCard(
+                        job = job,
+                        onClick = { onJobClick(job.id) },
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
 }
