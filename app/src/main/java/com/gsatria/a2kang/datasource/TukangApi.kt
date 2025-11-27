@@ -1,6 +1,7 @@
 package com.gsatria.a2kang.datasource
 
 import com.gsatria.a2kang.model.request.UpdateTukangProfileRequest
+import com.gsatria.a2kang.model.response.BaseResponse
 import com.gsatria.a2kang.model.response.TukangHomeResponse
 import com.gsatria.a2kang.model.response.TukangProfileResponse
 import com.gsatria.a2kang.model.response.TukangResponse
@@ -14,10 +15,16 @@ interface TukangApi {
         @Query("kategori") kategori: String? = null
     ): Response<List<TukangResponse>>
 
+    @GET("tukang/{id}")
+    suspend fun getTukangDetail(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): Response<TukangResponse>
+
     @GET("tukang/home")
     suspend fun getTukangHome(
         @Header("Authorization") token: String
-    ): Response<TukangHomeResponse>
+    ): Response<BaseResponse<TukangHomeResponse>>
 
     @GET("tukang/profile")
     suspend fun getTukangProfile(

@@ -1,4 +1,4 @@
-package com.gsatria.a2kang.screen.tukang.service
+package com.gsatria.a2kang.screen.tukang.edit
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,9 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gsatria.a2kang.R
@@ -25,7 +23,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 
 @Composable
-fun EditLayananScreen(
+fun EditProfileScreen(
     onBackClick: () -> Unit = {}
 ) {
 

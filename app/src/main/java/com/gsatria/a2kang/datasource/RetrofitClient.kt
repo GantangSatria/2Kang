@@ -37,4 +37,22 @@ object RetrofitClient {
             .build()
             .create(TukangApi::class.java)
     }
+
+    val orderApi: OrderApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(OrderApi::class.java)
+    }
+
+    val tukangOrderApi: TukangOrderApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(TukangOrderApi::class.java)
+    }
 }
