@@ -119,7 +119,11 @@ fun HomepageUser(
                     items(tukangs.value) { tukang ->
                         TukangCard(
                             tukang = tukang,
-                            onItemClick = { onTukangClick(it.id) }
+                            onItemClick = {
+                                tukang.id?.let { id ->
+                                    onTukangClick(id)
+                                }
+                            }
                         )
                     }
                 }

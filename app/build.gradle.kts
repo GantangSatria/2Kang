@@ -46,6 +46,7 @@ dependencies {
 
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.media3.common.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -58,4 +59,7 @@ dependencies {
     // --- NETWORK ---
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+
+    // Add logging interceptor
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

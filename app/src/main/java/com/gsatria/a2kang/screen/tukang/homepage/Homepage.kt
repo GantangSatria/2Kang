@@ -11,32 +11,37 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gsatria.a2kang.ui.theme.SoraFontFamily
+import com.gsatria.a2kang.viewmodel.TukangHomeViewModel
 
-// Data Models - akan diisi dari backend
+// Data Models
 data class TukangProfile(
     val name: String,
     val profileImageUrl: String? = null,
     val bio: String,
-    val rate: Long // dalam rupiah
+    val rate: Long
 )
 
 data class JobStatistics(
@@ -44,126 +49,111 @@ data class JobStatistics(
     val completedJobs: Int
 )
 
-data class UpcomingJob(
-    val id: Int,
-    val title: String,
-    val date: String, // format: "Senin, 17 November 2025"
-    val time: String // format: "14.00"
-)
-
 data class HomepageTukangData(
     val profile: TukangProfile,
-    val statistics: JobStatistics,
-    val upcomingJobs: List<UpcomingJob>
+    val statistics: JobStatistics
 )
 
 @Composable
 fun HomepageTukang(
-    data: HomepageTukangData? = null,
+    viewModel: TukangHomeViewModel = viewModel(),
     onEditProfileClick: () -> Unit = {},
     onJobClick: (Int) -> Unit = {},
+    onPermintaanClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    // Default data untuk preview/testing
-    val homepageData = data ?: HomepageTukangData(
-        profile = TukangProfile(
-            name = "Budi Santoso",
-            bio = "Saya tukang yang berpengalaman dan dapat diandalkan dengan...",
-            rate = 100000L
-        ),
-        statistics = JobStatistics(
-            unprocessedJobs = 6,
-            completedJobs = 30
-        ),
-        upcomingJobs = listOf(
-            UpcomingJob(
-                id = 1,
-                title = "Perbaikan AC",
-                date = "Senin, 17 November 2025",
-                time = "14.00"
+    val profileData = viewModel.profileData.collectAsState()
+    val loading = viewModel.loading.collectAsState()
+    val error = viewModel.error.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
+    // Convert data to UI model
+    val homepageData = profileData.value?.let { profile ->
+        HomepageTukangData(
+            profile = TukangProfile(
+                name = profile.profile.name ?: "Tukang",
+                bio = profile.profile.bio ?: "Belum ada bio",
+                rate = 50000L // Default rate
             ),
-            UpcomingJob(
-                id = 2,
-                title = "Perbaikan Saluran Air",
-                date = "Senin, 17 November 2025",
-                time = "16.00"
+            statistics = JobStatistics(
+                unprocessedJobs = 0,
+                completedJobs = profile.reviews?.size ?: 0
             )
         )
-    )
+    }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(WindowInsets.statusBars.asPaddingValues())
-    ) {
-        item {
-            // Header Section
-            HeaderSection(
-                name = homepageData.profile.name,
-                profileImageUrl = homepageData.profile.profileImageUrl
-            )
+    if (loading.value) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
+    } else {
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(WindowInsets.statusBars.asPaddingValues())
+        ) {
+            item {
+                error.value?.let { errorMessage ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = errorMessage,
+                            color = Color.Red,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
 
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+            homepageData?.let { data ->
+                item {
+                    HeaderSection(
+                        name = data.profile.name,
+                        profileImageUrl = data.profile.profileImageUrl,
+                        onPermintaanClick = onPermintaanClick
+                    )
+                }
 
-        item {
-            // Profile Card
-            ProfileCard(
-                profile = homepageData.profile,
-                onEditClick = onEditProfileClick,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-        }
+                item {
+                    ProfileCard(
+                        profile = data.profile,
+                        onEditClick = onEditProfileClick,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                }
 
-        item {
-            // Statistics Cards
-            StatisticsCards(
-                statistics = homepageData.statistics,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
 
-        item {
-            Spacer(modifier = Modifier.height(32.dp))
-        }
+                item {
+                    StatisticsCards(
+                        statistics = data.statistics,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                }
 
-        item {
-            // Upcoming Jobs Section Header
-            Text(
-                text = "Pekerjaan Mendatang",
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    fontFamily = SoraFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                ),
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // Upcoming Jobs List
-        items(homepageData.upcomingJobs) { job ->
-            UpcomingJobCard(
-                job = job,
-                onClick = { onJobClick(job.id) },
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(32.dp))
+                item {
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+            }
         }
     }
 }
@@ -172,7 +162,8 @@ fun HomepageTukang(
 private fun HeaderSection(
     name: String,
     profileImageUrl: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPermintaanClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
@@ -203,29 +194,50 @@ private fun HeaderSection(
             )
         }
 
-        // Profile Picture (Circular)
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray),
-            contentAlignment = Alignment.Center
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (profileImageUrl != null) {
-                // TODO: Load image from URL using Coil or similar
-                Text(
-                    text = "Image",
-                    fontSize = 12.sp,
-                    color = Color.Gray
+            // Permintaan Button (Bell Icon)
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE3F2FD))
+                    .clickable(onClick = onPermintaanClick),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Permintaan",
+                    modifier = Modifier.size(24.dp),
+                    tint = Color(0xFF2D8CFF)
                 )
-            } else {
-                Text(
-                    text = name.take(1).uppercase(),
-                    fontSize = 20.sp,
-                    fontFamily = SoraFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Gray
-                )
+            }
+
+            // Profile Picture (Circular)
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray),
+                contentAlignment = Alignment.Center
+            ) {
+                if (profileImageUrl != null) {
+                    Text(
+                        text = "Image",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                } else {
+                    Text(
+                        text = name.take(1).uppercase(),
+                        fontSize = 20.sp,
+                        fontFamily = SoraFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                }
             }
         }
     }
@@ -253,7 +265,6 @@ private fun ProfileCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Profile Picture (Square with rounded corners)
             Box(
                 modifier = Modifier
                     .size(80.dp)
@@ -262,7 +273,6 @@ private fun ProfileCard(
                 contentAlignment = Alignment.Center
             ) {
                 if (profile.profileImageUrl != null) {
-                    // TODO: Load image from URL
                     Text(
                         text = "Image",
                         fontSize = 12.sp,
@@ -322,7 +332,6 @@ private fun ProfileCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Edit Button
             Button(
                 onClick = onEditClick,
                 modifier = Modifier.height(36.dp),
@@ -354,14 +363,12 @@ private fun StatisticsCards(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Unprocessed Jobs Card
         StatisticCard(
             icon = Icons.Default.DateRange,
             count = statistics.unprocessedJobs,
             label = "Pekerjaan yang Belum Diproses"
         )
 
-        // Completed Jobs Card
         StatisticCard(
             icon = Icons.Default.DateRange,
             count = statistics.completedJobs,
@@ -429,80 +436,6 @@ private fun StatisticCard(
     }
 }
 
-@Composable
-private fun UpcomingJobCard(
-    job: UpcomingJob,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = job.title,
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontFamily = SoraFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = job.date,
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontFamily = SoraFontFamily,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Gray
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = job.time,
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontFamily = SoraFontFamily,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Gray
-                    )
-                )
-            }
-
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Detail",
-                tint = Color.Gray,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-
-// Helper function untuk format currency
 private fun formatCurrency(amount: Long): String {
     return String.format("%,d", amount).replace(",", ".")
 }
