@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gsatria.a2kang.core.util.TokenManager
 import com.gsatria.a2kang.datasource.RetrofitClient
+import com.gsatria.a2kang.datasource.repository.AuthRepository
 import com.gsatria.a2kang.datasource.repository.TukangRepository
 import com.gsatria.a2kang.model.domain.Tukang
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,6 +57,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _loading.value = false
         }
     }
+
+//    fun logout() {
+//        viewModelScope.launch {
+//            AuthRepository.clearToken()
+//        }
+//    }
+
 
     fun refreshTukangs(kategori: String? = null) {
         loadTukangs(kategori)

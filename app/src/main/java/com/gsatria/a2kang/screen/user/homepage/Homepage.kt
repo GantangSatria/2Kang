@@ -1,6 +1,7 @@
 package com.gsatria.a2kang.screen.user.homepage
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +22,8 @@ import com.gsatria.a2kang.viewmodel.HomeViewModel
 @Composable
 fun HomepageUser(
     viewModel: HomeViewModel = viewModel(),
-    onTukangClick: (Int) -> Unit = {}
+    onTukangClick: (Int) -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val tukangs = viewModel.tukangs.collectAsState()
     val loading = viewModel.loading.collectAsState()
@@ -40,18 +42,40 @@ fun HomepageUser(
                 .background(Color.White)
                 .padding(16.dp)
         ) {
-            Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                // Kiri: Greeting
+                Column {
+                    Text(
+                        text = "Halo, Satria!",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "Perbaikan apa yang kamu butuhkan?",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                // Kanan: Tombol Logout
                 Text(
-                    text = "Halo, Satria!",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Text(
-                    text = "Perbaikan apa yang kamu butuhkan hari ini?",
+                    text = "Logout",
                     fontSize = 14.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(top = 4.dp)
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(start = 16.dp)
+                        .clickable {
+                            //viewModel.logout()   // hapus token
+                            onLogout()
+                        }
                 )
             }
         }
