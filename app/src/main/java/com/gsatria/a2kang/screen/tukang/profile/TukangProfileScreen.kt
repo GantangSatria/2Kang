@@ -1,6 +1,5 @@
 package com.gsatria.a2kang.screen.tukang.profile
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +12,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,10 +27,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gsatria.a2kang.R
 import com.gsatria.a2kang.ui.theme.SoraFontFamily
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import com.gsatria.a2kang.viewmodel.TukangHomeViewModel
 
 data class Ulasan(
     val nama: String,
@@ -39,32 +42,37 @@ data class Ulasan(
 
 @Composable
 fun TukangProfileScreen(
-    onEditLayananClick: () -> Unit = {},
+    viewModel: TukangHomeViewModel = viewModel(),
+    onBackClick: () -> Unit = {},
     onEditProfilClick: () -> Unit = {}
 ) {
-    val bluePrimary = Color(0xFF2D8CFF)
+    // Mengambil state dari ViewModel
+    // Pastikan viewModel.profileData bertipe StateFlow<TukangResponse?> atau sejenisnya
+    val profileState = viewModel.profileData.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
+    // Extract data safely
+    val responseWrapper = profileState.value
+    val tukangData = responseWrapper?.profile
+    val displayName = tukangData?.name ?: "Memuat..."
+    val displayBio = tukangData?.bio ?: "-"
+
+    // Logic Split Category: String "Listrik, Air, AC" -> List ["Listrik", "Air", "AC"]
+    val categoryString = tukangData?.category ?: ""
+    val skillList = if (categoryString.isNotBlank()) {
+        categoryString.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    } else {
+        emptyList()
+    }
+
+    // Data Dummy untuk Ulasan (Belum ada di backend entity Transaction/Review)
     val daftarUlasan = listOf(
-        Ulasan(
-            nama = "Rina Amelia",
-            rating = 5.0f,
-            komentar = "Pelayanan sangat cepat! AC langsung dingin lagi. Tukang sangat ramah dan profesional. Sangat direkomendasikan!"
-        ),
-        Ulasan(
-            nama = "Bambang Wijaya",
-            rating = 3.5f,
-            komentar = "Service nya bagus banget, walaupun agak telat sih datengnya. Kerjaannya selesai dengan sangat sempurna top deh pokoknya."
-        ),
-        Ulasan(
-            nama = "Aldo Fernando",
-            rating = 4.0f,
-            komentar = "Harga sesuai, pengerjaan rapi. Hanya saja perlu sedikit lebih detail dalam komunikasi jadwal. Tapi hasilnya memuaskan!"
-        ),
-        Ulasan(
-            nama = "Siti Nurhaliza",
-            rating = 4.5f,
-            komentar = "Pemasangan instalasi listrik baru berjalan lancar. Tukang Budi sangat teliti. Akan pakai jasa lagi lain kali."
-        )
+        Ulasan("Rina Amelia", 5.0f, "Pelayanan sangat cepat! Tukang sangat ramah."),
+        Ulasan("Bambang Wijaya", 3.5f, "Kerjaannya selesai dengan sangat sempurna."),
+        Ulasan("Aldo Fernando", 4.0f, "Harga sesuai, pengerjaan rapi.")
     )
 
     LazyColumn(
@@ -77,14 +85,22 @@ fun TukangProfileScreen(
         item {
             Spacer(modifier = Modifier.height(32.dp))
 
-            ProfileHeaderCard(onEditLayananClick, onEditProfilClick)
+            // Pass data dinamis ke Header
+            ProfileHeaderCard(
+                name = displayName,
+                bio = displayBio,
+                rating = 0.0f, // Rating di Entity Backend Tukang ada (float32), bisa dipasang jika response support
+                reviewCount = 0,
+                onEditProfilClick = onEditProfilClick
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             FormLabel(text = "Keterampilan dan Keahlian", isBold = true)
             Spacer(modifier = Modifier.height(16.dp))
 
-            FlowLayoutStatic()
+            // Pass list skill hasil split category
+            SkillsFlowLayout(skills = skillList)
 
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -100,25 +116,32 @@ fun TukangProfileScreen(
         }
 
         item {
-            Spacer(modifier = Modifier.height(32.dp)) // Padding bawah
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-fun ProfileHeaderCard(onEditLayananClick: () -> Unit, onEditProfilClick: () -> Unit) {
+fun ProfileHeaderCard(
+    name: String,
+    bio: String,
+    rating: Float,
+    reviewCount: Int,
+    onEditProfilClick: () -> Unit
+) {
     val bluePrimary = Color(0xFF2D8CFF)
 
     Box(
         modifier = Modifier
             .shadow(elevation = 2.dp, spotColor = Color(0x40000000), ambientColor = Color(0x40000000))
             .width(320.dp)
-            .height(236.dp)
+            // Height menyesuaikan konten
+            .wrapContentHeight()
             .background(color = Color(0xFFFFFFFF), shape = RoundedCornerShape(size = 12.dp))
-            .padding(12.dp)
+            .padding(16.dp) // Padding sedikit diperbesar agar lega
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -128,43 +151,45 @@ fun ProfileHeaderCard(onEditLayananClick: () -> Unit, onEditProfilClick: () -> U
                 contentDescription = "Foto Profil Tukang",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .width(72.dp)
-                    .height(72.dp)
+                    .size(72.dp)
                     .clip(CircleShape)
             )
 
+            // Nama dari Backend
             Text(
-                text = "Budi Santoso",
+                text = name,
                 style = TextStyle(
                     fontSize = 20.sp,
                     fontFamily = SoraFontFamily,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF000000),
-                ),
-                modifier = Modifier.height(25.dp)
+                    textAlign = TextAlign.Center
+                )
             )
 
+            // Bio dari Backend
             Text(
-                text = "Perbaikan Listrik",
+                text = bio,
                 style = TextStyle(
-                    fontSize = 16.sp,
+                    fontSize = 14.sp, // Sedikit diperkecil agar muat jika bio panjang
                     fontFamily = SoraFontFamily,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                     color = Color(0x80000000),
                     textAlign = TextAlign.Center,
                 ),
-                modifier = Modifier.height(20.dp)
+                maxLines = 2 // Batasi 2 baris agar tidak merusak layout
             )
 
+            // Rating Section (Hardcoded placeholder visual logic for now)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                val ratingValue = 4.9f
+                val displayRating = if (rating > 0) rating else 5.0f // Default dummy jika 0
 
-                RatingStars(rating = ratingValue)
+                RatingStars(rating = displayRating)
 
                 Spacer(modifier = Modifier.width(4.dp))
 
                 Text(
-                    text = "$ratingValue ",
+                    text = "$displayRating ",
                     style = TextStyle(
                         fontSize = 12.sp,
                         fontFamily = SoraFontFamily,
@@ -174,7 +199,7 @@ fun ProfileHeaderCard(onEditLayananClick: () -> Unit, onEditProfilClick: () -> U
                 )
 
                 Text(
-                    text = "(6 Ulasan)",
+                    text = "($reviewCount Ulasan)",
                     style = TextStyle(
                         fontSize = 12.sp,
                         fontFamily = SoraFontFamily,
@@ -184,23 +209,80 @@ fun ProfileHeaderCard(onEditLayananClick: () -> Unit, onEditProfilClick: () -> U
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-
-                ProfileActionButton(
-                    text = "Edit Layanan",
-                    backgroundColor = Color(0xFFD9D9D9),
-                    textColor = Color(0xFF000000),
-                    onClick = onEditLayananClick
-                )
-
-                ProfileActionButton(
+            // Button Section - Hanya Edit Profil
+            Button(
+                onClick = onEditProfilClick,
+                modifier = Modifier
+                    .width(120.dp) // Lebar disesuaikan karena cuma 1 tombol
+                    .height(36.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = bluePrimary),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
                     text = "Edit Profil",
-                    backgroundColor = bluePrimary,
-                    textColor = Color(0xFFFFFFFF),
-                    onClick = onEditProfilClick
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        fontFamily = SoraFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        letterSpacing = 0.12.sp,
+                    )
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun SkillsFlowLayout(skills: List<String>) {
+    if (skills.isEmpty()) {
+        Text(
+            text = "Belum ada kategori keahlian.",
+            style = TextStyle(
+                fontSize = 12.sp,
+                fontFamily = SoraFontFamily,
+                color = Color.Gray
+            )
+        )
+    } else {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            skills.forEach { skill ->
+                SkillChip(skill = skill)
+            }
+        }
+    }
+}
+
+@Composable
+fun SkillChip(skill: String) {
+    // Warna default biru muda
+    val backgroundColor = Color(0xFFE0E0FF)
+    val textColor = Color(0xFF1E80FF)
+    val borderColor = Color(0xFF1E80FF)
+
+    Box(
+        modifier = Modifier
+            .height(32.dp)
+            .background(backgroundColor, shape = RoundedCornerShape(100.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(100.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = skill,
+            style = TextStyle(
+                fontSize = 12.sp,
+                fontFamily = SoraFontFamily,
+                fontWeight = FontWeight.Medium,
+                color = textColor
+            )
+        )
     }
 }
 
@@ -226,7 +308,6 @@ fun UlasanCard(ulasan: Ulasan) {
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Column {
-
                     Text(
                         text = ulasan.nama,
                         style = TextStyle(
@@ -236,7 +317,6 @@ fun UlasanCard(ulasan: Ulasan) {
                             color = Color(0xFF000000),
                         )
                     )
-
                     RatingStars(rating = ulasan.rating)
                 }
             }
@@ -251,7 +331,7 @@ fun UlasanCard(ulasan: Ulasan) {
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF000000),
                 ),
-                modifier = Modifier.fillMaxWidth().heightIn(min = 45.dp)
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -259,46 +339,28 @@ fun UlasanCard(ulasan: Ulasan) {
 
 @Composable
 fun RatingStars(rating: Float) {
-    val starColor = Color(0xFFF9C848) // Warna Kuning/Oranye
+    val starColor = Color(0xFFF9C848)
     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         repeat(5) { index ->
             val starIcon = when {
                 index + 1 <= rating -> R.drawable.ic_star_filled
-                index < rating && (rating % 1.0f) >= 0.5f -> R.drawable.ic_star_half // Bintang setengah
-                else -> R.drawable.ic_star_filled
+                index < rating && (rating % 1.0f) >= 0.5f -> R.drawable.ic_star_half
+                else -> R.drawable.ic_star_filled // Note: Harusnya ada resource ic_star_outline/empty
             }
+            // Menggunakan color filter untuk tinting
+            val filter = if (index + 1 > rating && (rating % 1.0f) < 0.5f) {
+                androidx.compose.ui.graphics.ColorFilter.tint(Color.LightGray) // Bintang kosong abu-abu
+            } else {
+                androidx.compose.ui.graphics.ColorFilter.tint(starColor)
+            }
+
             Image(
                 painter = painterResource(id = starIcon),
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(starColor)
+                colorFilter = filter
             )
         }
-    }
-}
-
-
-@Composable
-fun ProfileActionButton(text: String, backgroundColor: Color, textColor: Color, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .width(86.dp)
-            .height(30.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = backgroundColor),
-        shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(4.dp)
-    ) {
-        Text(
-            text,
-            style = TextStyle(
-                fontSize = 12.sp,
-                fontFamily = SoraFontFamily,
-                fontWeight = FontWeight.SemiBold,
-                color = textColor,
-                letterSpacing = 0.12.sp,
-            )
-        )
     }
 }
 
@@ -312,47 +374,12 @@ fun FormLabel(text: String, isBold: Boolean = false) {
             fontWeight = if (isBold) FontWeight.Bold else FontWeight.SemiBold,
             color = Color(0xFF000000),
         ),
-        modifier = Modifier.fillMaxWidth().height(20.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@Preview(showBackground = true)
 @Composable
-fun FlowLayoutStatic() {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        listOf("Saluran Air", "Listrik", "Perabotan", "Perbaikan AC").forEach { skill ->
-            val isSelectedStyle = skill == "Saluran Air" || skill == "Listrik"|| skill == "Perabotan"|| skill == "Perbaikan AC"
-            SkillChipStatic(skill = skill, isSelectedStyle = isSelectedStyle)
-        }
-    }
-}
-
-@Composable
-fun SkillChipStatic(skill: String, isSelectedStyle: Boolean) {
-    val backgroundColor = if (isSelectedStyle) Color(0xFFE0E0FF) else Color(0xFFF0F0F0)
-    val textColor = if (isSelectedStyle) Color(0xFF1E80FF) else Color(0xFF000000)
-    val borderColor = if (isSelectedStyle) Color(0xFF1E80FF) else Color.Transparent
-
-    Box(
-        modifier = Modifier
-            .height(32.dp)
-            .background(backgroundColor, shape = RoundedCornerShape(100.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(100.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = skill,
-            style = TextStyle(
-                fontSize = 12.sp,
-                fontFamily = SoraFontFamily,
-                fontWeight = FontWeight.Medium,
-                color = textColor
-            )
-        )
-    }
+fun Profiletukangpreview() {
+    TukangProfileScreen()
 }
