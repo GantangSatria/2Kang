@@ -130,6 +130,11 @@ fun MyApp() {
                 viewModel = viewModel,
                 onTukangClick = { tukangId ->
                     navController.navigate("tukang_detail/$tukangId")
+                },
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo("homepage") { inclusive = true }
+                    }
                 }
             )
         }

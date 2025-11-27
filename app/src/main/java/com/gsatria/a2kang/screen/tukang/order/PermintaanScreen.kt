@@ -58,6 +58,7 @@ fun PermintaanScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
+            .padding(WindowInsets.statusBars.asPaddingValues())
     ) {
         // Top Bar
         TopBar(onBackClick = onBackClick)
