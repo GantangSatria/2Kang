@@ -16,14 +16,18 @@ import com.gsatria.a2kang.model.request.RegisterUserRequest
 import com.gsatria.a2kang.screen.auth.LoginScreen
 import com.gsatria.a2kang.screen.auth.SelectRoleScreen
 import com.gsatria.a2kang.screen.auth.UploadVerifikasiTukangScreen
+import com.gsatria.a2kang.screen.tukang.edit.EditProfileScreen
 import com.gsatria.a2kang.screen.tukang.homepage.HomepageTukang
+import com.gsatria.a2kang.screen.tukang.order.PermintaanScreen
 import com.gsatria.a2kang.screen.tukang.profile.TukangProfileScreen
 import com.gsatria.a2kang.screen.user.homepage.HomepageUser
+import com.gsatria.a2kang.screen.user.order.OrderConfirmationScreen
 import com.gsatria.a2kang.screen.welcome.WelcomeScreen
 import com.gsatria.a2kang.viewmodel.HomeViewModel
 import com.gsatria.a2kang.viewmodel.auth.AuthViewModel
 import com.gsatria.a2kang.viewmodel.auth.AuthViewModelFactory
 import com.gsatria.a2kang.viewmodel.TukangHomeViewModel
+import com.gsatria.a2kang.screen.user.tukangdetail.TukangDetailScreen
 
 @Composable
 fun MyApp() {
@@ -125,7 +129,7 @@ fun MyApp() {
             HomepageUser(
                 viewModel = viewModel,
                 onTukangClick = { tukangId ->
-                    // Navigate to tukang detail if needed
+                    navController.navigate("tukang_detail/$tukangId")
                 }
             )
         }
@@ -140,6 +144,9 @@ fun MyApp() {
                 onJobClick = { jobId ->
                     // Navigate to job detail if needed
                     // navController.navigate("job_detail/$jobId")
+                },
+                onPermintaanClick = {
+                    navController.navigate("tukang_permintaan")
                 }
             )
         }
@@ -151,8 +158,49 @@ fun MyApp() {
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onEditLayananClick = {
-                    // Navigate to edit service if needed
+                onEditProfilClick = {
+                    navController.navigate("edit_profile")
+                }
+            )
+        }
+
+        composable("edit_profile") {
+            EditProfileScreen()
+        }
+
+        composable("tukang_detail/{tukangId}") { backStackEntry ->
+            val tukangId = backStackEntry.arguments?.getString("tukangId")?.toIntOrNull() ?: 0
+            TukangDetailScreen(
+                tukangId = tukangId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onBookServiceClick = {
+                    navController.navigate("order_confirmation/$tukangId")
+                }
+            )
+        }
+
+        composable("order_confirmation/{tukangId}") { backStackEntry ->
+            val tukangId = backStackEntry.arguments?.getString("tukangId")?.toIntOrNull() ?: 0
+            OrderConfirmationScreen(
+                tukangId = tukangId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onOrderSuccess = {
+                    // Navigate to success screen or back to homepage
+                    navController.navigate("user_homepage") {
+                        popUpTo("tukang_detail") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable("tukang_permintaan") {
+            PermintaanScreen(
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
         }

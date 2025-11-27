@@ -56,6 +56,25 @@ class TukangRepository(
             Result.failure(e)
         }
     }
+
+    suspend fun getTukangDetail(token: String, id: Int): Result<com.gsatria.a2kang.model.domain.Tukang> {
+        return try {
+            val response = api.getTukangDetail("Bearer $token", id)
+            if (response.isSuccessful && response.body() != null) {
+                val responseItem = response.body()!!
+                val domain = responseItem.toDomain()
+                if (domain != null) {
+                    Result.success(domain)
+                } else {
+                    Result.failure(Exception("Gagal mengkonversi data tukang"))
+                }
+            } else {
+                Result.failure(Exception("Gagal mengambil detail tukang: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 
 // Extension function untuk convert TukangResponse ke Tukang domain

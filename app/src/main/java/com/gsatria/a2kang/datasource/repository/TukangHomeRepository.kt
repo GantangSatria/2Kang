@@ -14,34 +14,29 @@ class TukangHomeRepository(
         return try {
             val response = api.getTukangHome("Bearer $token")
             println("DEBUG: Response code: ${response.code()}")
-            println("DEBUG: Response isSuccessful: ${response.isSuccessful}")
 
-            if (response.isSuccessful) {
+            if (response.isSuccessful && response.body() != null) {
+                // 1. Ambil BaseResponse
+                val baseResponse = response.body()!!
 
-                val body = response.body()
+                // 2. Ambil data aslinya (TukangHomeResponse)
+                val homeData = baseResponse.data
 
-                if (body != null) {
-                    // Logging aman: Convert object body ke JSON string menggunakan Gson instance
-                    println("DEBUG: Parsed Data: ${gson.toJson(body)}")
-
-                    // Debugging spesifik properti
-                    println("DEBUG: Profile prop: ${body.profile}")
-                    println("DEBUG: Jobs prop: ${body.jobs}")
-
-                    Result.success(body)
+                if (homeData != null) {
+                    println("DEBUG: Parsed Data Success!")
+                    println("DEBUG: Profile Name: ${homeData.profile?.name}")
+                    Result.success(homeData)
                 } else {
-                    println("DEBUG: Response body is null!")
-                    Result.failure(Exception("Response body is null"))
+                    println("DEBUG: Field 'data' is null in response")
+                    Result.failure(Exception("Data kosong dari server"))
                 }
             } else {
-                // Error handling aman
-                val errorBodyStr = response.errorBody()?.string() ?: "Unknown error"
-                val errorMsg = "Gagal mengambil data: ${response.message()} ($errorBodyStr)"
-                println("DEBUG: $errorMsg")
+                val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                println("DEBUG: Error - $errorMsg")
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            println("DEBUG: Exception in getTukangHome: ${e.message}")
+            println("DEBUG: Exception - ${e.message}")
             e.printStackTrace()
             Result.failure(e)
         }

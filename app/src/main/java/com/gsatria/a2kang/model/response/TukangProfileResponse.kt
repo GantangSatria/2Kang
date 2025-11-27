@@ -3,11 +3,13 @@ package com.gsatria.a2kang.model.response
 import com.google.gson.annotations.SerializedName
 
 data class TukangProfileResponse(
-    @SerializedName("Profile")
+    @SerializedName("profile")
     val profile: TukangResponse,
-    @SerializedName("Reviews")
-    val reviews: List<ReviewResponse>? = null
+
+    @SerializedName("reviews")
+    val reviews: List<ReviewResponse>
 )
+
 
 data class ReviewResponse(
     @SerializedName("ID")
